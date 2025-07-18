@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Подсчет посетителей в магазине</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { display: flex; flex-direction: column; gap: 20px; }
+        .upload-section, .results-section { border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
+        button { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .report-section { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Подсчет посетителей в магазине</h1>
+        
+        <div class="upload-section">
+            <h2>Загрузите фото или видео</h2>
+            <input type="file" id="fileInput" accept="image/*,video/*">
+            <button onclick="processFile()">Начать обработку</button>
+        </div>
+        
+        <div class="results-section">
+            <h2>Результаты</h2>
+            <div id="stats"></div>
+            <img id="resultImage" src="" alt="Результат обработки" style="max-width: 100%; display: none;">
+        </div>
+        
+        <div class="report-section">
+            <h2>Отчеты</h2>
+            <button onclick="generateReport('pdf')">Скачать отчет (PDF)</button>
+            <button onclick="generateReport('excel')">Скачать отчет (Excel)</button>
+        </div>
+    </div>
+
+    <script>
+        async function processFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Пожалуйста, выберите файл');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(`Ошибка: ${data.error}`);
+                    return;
+                }
+                
+                // Показываем результаты
+                document.getElementById('stats').innerHTML = `
+                    <h3>Файл: ${data.filename}</h3>
+                    <p>Обнаружено посетителей: <strong>${data.count}</strong></p>
+                `;
+                
+                const resultImg = document.getElementById('resultImage');
+                resultImg.src = data.result_url + '?t=' + new Date().getTime();
+                resultImg.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при обработке файла');
+            }
+        }
+        
+        function generateReport(type) {
+            window.open(`/report/${type}`, '_blank');
+        }
+    </script>
+</body>
+</html>
